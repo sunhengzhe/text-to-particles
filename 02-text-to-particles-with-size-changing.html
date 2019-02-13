@@ -1,0 +1,98 @@
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Document</title>
+  <style>
+    body, canvas {
+      margin: 0;
+      padding: 0;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="stage"></canvas>
+
+<script>
+const WIDTH = window.innerWidth;
+const HEIGHT = window.innerHeight;
+
+const offscreenCanvas = document.createElement('canvas');
+const offscreenCtx = offscreenCanvas.getContext('2d');
+
+offscreenCanvas.width = WIDTH;
+offscreenCanvas.height = HEIGHT;
+
+offscreenCtx.font = '100px PingFang SC';
+offscreenCtx.textAlign = 'center';
+offscreenCtx.baseline = 'middle';
+offscreenCtx.fillText('Hello', WIDTH / 2, HEIGHT / 2);
+
+
+const imgData = offscreenCtx.getImageData(0, 0, WIDTH, HEIGHT).data;
+
+const colors = ['#DC9FB4', '#91B493', '#F6C555', '#81C7D4', '#B28FCE']
+
+class Particle {
+    constructor (options = {}) {
+        const { x = 0, y = 0, color = '#fff', radius = 5} = options;
+        this.radius = radius;
+        this.x = x;
+        this.y = y;
+        this.color = color;
+        this.dynamicRadius = radius;
+    }
+
+    update () {
+        this.dynamicRadius = 3 + 2 * Math.sin(new Date() / 1000 % 1000 * this.radius);
+    }
+
+    draw (ctx) {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.dynamicRadius, 0, 2 * Math.PI, false);
+        ctx.fillStyle = this.color;
+        ctx.fill();
+        ctx.closePath();
+    }
+}
+
+const particles = [];
+const skip = 4;
+for (var y = 0; y < HEIGHT; y += skip) {
+    for (var x = 0; x < WIDTH; x += skip) {
+        var opacityIndex = (x + y * WIDTH) * 4 + 3;
+        if (imgData[opacityIndex] > 0) {
+            particles.push(new Particle({
+                x: x + Math.random() * 6 - 3,
+                y: y + Math.random() * 6 - 3,
+                radius: Math.random() * 4 + 1,
+                color: colors[Math.random() * colors.length | 0]
+            }));
+        }
+    }
+}
+
+const canvas = document.querySelector('#stage');
+canvas.width = WIDTH;
+canvas.height = HEIGHT;
+const ctx = canvas.getContext('2d');
+
+for (const particle of particles) {
+    particle.draw(ctx);
+}
+
+requestAnimationFrame(function loop() {
+    requestAnimationFrame(loop);
+
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+    for (const particle of particles) {
+        particle.update();
+        particle.draw(ctx);
+    }
+});
+</script>
+</body>
+</html>
